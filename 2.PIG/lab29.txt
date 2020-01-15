@@ -1,0 +1,38 @@
+-- se eliminan archivos en hdfs
+
+fs -rm -r -f output
+fs -rm -r -f *.csv
+
+-- copia de archivos del sistema local al HDFS
+
+fs -put data.csv
+
+-- carga de archivos
+
+
+u = LOAD 'data.csv' USING PigStorage(',') 
+    AS (id:int, 
+        firstname:CHARARRAY, 
+        surname:CHARARRAY, 
+        birthday:CHARARRAY, 
+        color:CHARARRAY, 
+        quantity:INT);
+
+-- Registro de UDF
+
+Register 'myudf.py' using streaming_python as myudf;
+
+-- Resultado
+
+z = FOREACH u GENERATE birthday, myudf.mes(GetMonth(ToDate(birthday))), myudf.concatenar(GetMonth(ToDate(birthday))), GetMonth(ToDate(birthday));
+
+
+-- almacenamiento
+
+STORE z INTO 'output' USING PigStorage(',');
+
+
+-- copia de archivos del HDFS al sistema local
+
+fs -get output/ ;
+

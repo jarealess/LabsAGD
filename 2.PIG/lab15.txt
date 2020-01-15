@@ -1,0 +1,41 @@
+-- se eliminan archivos en hdfs
+
+fs -rm -r -f *.csv
+fs -rm -r -f output
+
+-- copia de archivos del sistema local al HDFS
+
+fs -put data.csv
+
+-- carga de archivos
+
+
+u = LOAD 'data.csv' USING PigStorage(',') 
+    AS (id:int, 
+        firstname:CHARARRAY, 
+        surname:CHARARRAY, 
+        birthday:CHARARRAY, 
+        color:CHARARRAY, 
+        quantity:INT);
+
+
+-- columna de interés
+
+uu = FOREACH u GENERATE firstname, SUBSTRING(firstname, 0, 1), color;
+
+-- filtro;
+
+zz = FILTER uu BY (($2 == 'blue') AND ($1 == 'Z'));
+
+-- resultado
+
+z = FOREACH zz GENERATE $0, $2;
+
+-- almacenamiento
+
+STORE z INTO 'output';
+
+
+-- copia de archivos del HDFS al sistema local
+
+fs -get output/ ;
